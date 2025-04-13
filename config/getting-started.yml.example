@@ -1,0 +1,86 @@
+## ================== Crawler Configuration - Elasticsearch ====================
+#
+##  A Getting Started Crawler Configuration that is configured entirely via environment
+#   variables for a quick and easy getting started experience.
+#
+#   ** General Crawler Configurations **
+#
+#   environment variable | default value       | description
+#   ---------------------|---------------------|-------------------------
+#   CRAWL_URL            | https://example.com | The URL to crawl
+#
+#   By default the crawler will output to the console. Configuring an output
+#   directory will enable File Output. Configuring an ES_HOST will enable the
+#   Elasticsearch output.
+#
+#   ** File Output Configurations: ** 
+#
+#   environment variable | default value       | description
+#   ---------------------|---------------------|-------------------------
+#   OUTPUT_DIR           |                     | File sink output directory
+#
+#   ** Elasticsearch Output Configurations: **
+#
+#   environment variable | default value       | description
+#   ---------------------|---------------------|-------------------------
+#   ES_HOST              | localhost           | Elasticsearch Sink host
+#   ES_PORT              | 9200                | ES Port
+#   ES_SSL_VERIFY        | true                | ES SSL verification
+#   ES_API_KEY           |                     | ES API key
+#   ES_USERNAME          |                     | ES Username
+#   ES_PASSWORD          | changeme            | ES Password
+#   ES_PIPELINE          |                     | ES Indexing Pipeline
+#
+#   If 
+## ------------------------------- Crawler ------------------------------------
+
+<% 
+require 'uri'
+
+crawl_target = ENV['CRAWL_URL'] || "https://example.com"
+
+# Parse the crawl target URL
+parsed_target = URI.parse(crawl_target)
+
+# Scheme with Hostname
+domain = "#{parsed_target.scheme}://#{parsed_target.host}"
+%>
+
+domains:
+  - url: <%= domain %>         # The base URL for this domain
+    seed_urls:
+      - <%= crawl_target %>    # The entry point(s) for crawl jobs
+
+<%=
+# if the user has provided ES_HOST, then output_sink is elastisearch, otherwise console
+
+output_settings = {}
+
+if ENV['ES_HOST']
+
+
+  elasticsearch_settings = output_settings[:elasticsearch] = {
+    output_sink = 'elasticsearch'
+    output_index = ENV['ES_INDEX'] || 'crawler-index'
+    host: ENV['ES_HOST'],
+    port: ENV['ES_PORT'] || 9200,
+    ssl_verify: ENV['ES_SSL_VERIFY'] != 'false',
+    api_key: ENV['ES_API_KEY'],
+    username: ENV['ES_USERNAME'],
+    password: ENV['ES_PASSWORD'],
+    pipeline: ENV['ES_PIPELINE']
+  }.compact
+elsif ENV['OUTPUT_DIR']
+  output_settings[:output_sink] = 'file'
+  output_settings[:output_dir] = ENV['OUTPUT_DIR']
+else
+  output_settings[:output_sink] = 'console'
+end
+
+output_settings = output_settings.deep_stringify_keys()
+
+yaml = YAML.dump(output_settings, symbolize_names: false).delete_prefix!("---\n")
+puts yaml #<-- Include this to print the rendered output YAML for debugging
+
+yaml
+%>
