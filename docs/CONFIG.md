@@ -43,6 +43,13 @@ If your Elasticsearch instance uses SSL/TLS with certificates signed by a privat
 
 **Note:** For detailed explanations of all Elasticsearch connection parameters, including authentication and other SSL options, refer to the comments within the [config/elasticsearch.yml.example](../config/elasticsearch.yml.example) file.
 
+### Sink Lock Retry Settings
+
+These settings control the retry behavior when the Elasticsearch output sink is locked.
+
+*   `sink_lock_retry_interval`: The interval in seconds to wait before retrying to acquire the sink lock. Defaults to `1`.
+*   `sink_lock_max_retries`: The maximum number of times to retry acquiring the sink lock before dropping the crawl result. Defaults to `120`.
+
 ## Configuration files in Docker
 
 See [CLI in Docker](./CLI.md#cli-in-docker) for details on how to mount configuration files into the Docker container for use with commands.
@@ -64,6 +71,24 @@ When performing a crawl with both a crawl config and an Elasticsearch config:
 bin/crawler crawl config/my-crawler.yml --es-config config/elasticsearch.yml
 ```
 
+## Environment Variables
+
+```yaml
+elasticsearch:
+  username: <%= ENV['ES_USER'] %>
+  password: <%= ENV['ES_PASS'] %>
+```
+
+**Example: Default Value Logic**
+
+```yaml
+output_path: <%= ENV['OUTPUT_PATH'] || '/tmp/crawl-output' %>
+```
+
+**How it works:**
+- Before parsing YAML, the file is processed with [Embedded Ruby (ERB) template syntax](https://github.com/ruby/erb).
+- You can use any Ruby code inside `<%= ... %>` tags, but the most common use is referencing environment variables.
+
 ## Example configurations
 
-See [examples](../config/examples) for example configurations.
+For more examples, see the sample configuration files in the [config directory](../config).
